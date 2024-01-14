@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Who is speaking</title>
+
+    <!-- Add the link to Shizuru font in the head -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shizuru:wght@400;700&display=swap">
+
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            position: relative;
+            font-family: 'Lora',
+        }
+        h1 {
+            font-size: 100px;
+            font-family: 'Lora', s /* Apply Lora font */
+            font-weight: normal;
+            color: rgb(0, 0, 0); /* Set text color to white */
+            margin: 15px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            margin-left: 15px;
+            margin-right: 15px;
+            
+            
+        }
+        h2 {
+            font-size: 200px;
+            font-family: 'Lora', s /* Apply Lora font */
+            font-weight: normal;
+            color: rgb(0, 0, 0); /* Set text color to white */
+            margin: 15px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            margin-left: 15px;
+            margin-right: 15px;
+        }
+        h3 {
+            font-size: 200px;
+            font-family: 'Lora', s /* Apply Lora font */
+            font-weight: normal;
+            color: rgb(0, 0, 0); /* Set text color to white */
+            margin: 15px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            margin-left: 15px;
+            margin-right: 15px;
+        }
+        button {
+            margin-top: 10px;
+            background-color: rgb(0, 255, 42);
+            border: none; 
+            width: 120px;
+            height: 30px;
+            font-size: 15px;
+            font-family: 'Abel', sans-serif; /* Apply Abel font */
+            color: rgb(0, 0, 0); /* Set text color to white */
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .blue-dot {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid black; /* Black border around the blue dot */
+            background-color: rgb(2, 2, 2);
+            margin: 15px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            margin-left: 15px;
+            margin-right: 15px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 9px;
+            position: absolute;
+            transition: transform 0.3s ease; /* Add a transition for smooth scaling */
+            font-family: 'Abel', sans-serif; /* Apply Abel font */
+            color: rgb(255, 255, 255); /* Set text color to white */
+            
+        }
+        #blue-dots-container {
+            width: 500;
+            height: 500px;
+        }
+        #label-container {
+            position: absolute;
+           color: rgb(0, 255, 26);
+           font-family: 'Abel', sans-serif; /* Apply Abel font */
+           font-size: 30px;
+            
+            
+        height: 30px; /* Hoogte van het zichtbare gedeelte van de container */
+        top: 200px;
+        left: 27%; 
+        transform: translateX(-50%);
+        z-index: 100;
+    }
+
+    
+
+        .made-by,
+        .minus-sign {
+            position: absolute;
+            font-family: 'Abel', sans-serif;
+            font-size: 12px;
+            color: rgb(0, 0, 0); /* Set text color to blue */
+        }
+        .made-by {
+            bottom: 10px;
+            right: 10px;
+        }
+
+        .minus-sign {
+            top: 10px;
+            right: 10px;
+            cursor: pointer; /* Add cursor pointer for better user interaction */
+        }
+
+    </style>
+</head>
+<body>
+    <h1 id="mainTitle">who's speaking?</h1>
+    <button id="startButton" type="button" onclick="init()">press</button>
+    <div id="label-container"></div>
+    
+    <!-- Container for blue dots -->
+    <div id="blue-dots-container"></div>
+
+    <!-- Container for connecting lines -->
+    <div id="connecting-lines-container"></div>
+
+   
+
+    <!-- Minus Sign -->
+    <div class="minus-sign" onclick="minimize()">-</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@0.4.0/dist/speech-commands.min.js"></script>
+    
+    <script type="text/javascript">
+        // the link to your model provided by Teachable Machine export panel
+        const URL = "https://teachablemachine.withgoogle.com/models/jcK4RSaH7/";
+        
+    
+        async function createModel() {
+            const checkpointURL = URL + "model.json"; // model topology
+            const metadataURL = URL + "metadata.json"; // model metadata
+    
+            const recognizer = speechCommands.create(
+                "BROWSER_FFT", // fourier transform type, not useful to change
+                undefined, // speech commands vocabulary feature, not useful for your models
+                checkpointURL,
+                metadataURL);
+    
+            // check that model and metadata are loaded via HTTPS requests.
+            await recognizer.ensureModelLoaded();
+    
+            return recognizer;
+        }
+    
+        async function init() {
+            const recognizer = await createModel();
+            const classLabels = recognizer.wordLabels(); // get class labels
+            const labelContainer = document.getElementById("label-container");
+            for (let i = 0; i < classLabels.length; i++) {
+                labelContainer.appendChild(document.createElement("div"));
+            }
+    
+            // Create blue dots in a line of 2 by 7 with class labels
+            const blueDotsContainer = document.getElementById("blue-dots-container");
+            for (let i = 0; i < 7; i++) {
+                for (let j = 0; j < 2; j++) {
+                    const blueDot = document.createElement("div");
+                    blueDot.classList.add("blue-dot");
+                    blueDot.textContent = classLabels[i * 2 + j]; // Assign class label to dot
+                    blueDotsContainer.appendChild(blueDot);
+                    moveDot(blueDot); // Move the dot to a random position
+                }
+                blueDotsContainer.appendChild(document.createElement("br")); // Add a line break after 2 dots
+                
+            }
+                
+            // Container for connecting lines
+            const connectingLinesContainer = document.getElementById("connecting-lines-container");
+
+            // listen() takes two arguments:
+            // 1. A callback function that is invoked anytime a word is recognized.
+            // 2. A configuration object with adjustable fields
+            recognizer.listen(result => {
+                const scores = result.scores; // probability of prediction for each class
+                // render the probability scores per class
+                for (let i = 0; i < classLabels.length; i++) {
+                    const classPrediction = classLabels[i] + ": " + result.scores[i].toFixed(2);
+                    labelContainer.childNodes[i].innerHTML = classPrediction;
+                }
+
+                // Update dot size based on confidence
+                const dots = document.querySelectorAll(".blue-dot");
+                for (let i = 0; i < dots.length; i++) {
+                    const dot = dots[i];
+                    const confidence = result.scores[i];
+                    updateDotSize(dot, confidence, classLabels[i]);
+                }
+
+                // Draw connecting lines between enlarged dots
+                //drawConnectingLines();
+            }, {
+                includeSpectrogram: true, // in case listen should return result.spectrogram
+                probabilityThreshold: 0.75,
+                invokeCallbackOnNoiseAndUnknown: true,
+                overlapFactor: 0.50
+            });
+
+            // Start the animation loop when the page loads
+            animateDots();
+
+            //// Button click -> change title size 
+            document.getElementById('mainTitle').style.fontSize = "40px";
+            //// Button click -> button invisible
+            document.getElementById("startButton").style.display = "none";
+        }
+
+        function playAudio(url) {
+            console.log(url)
+            const audio = new Audio(url);
+            audio.play();
+        }
+
+        function updateDotSize(dot, confidence, label) {
+            const scaleFactor = 1 + confidence * 5; // Adjust this value based on your preference
+            dot.style.transform = `scale(${scaleFactor})`;
+
+            // Voeg audio afspeelfunctie toe wanneer de dot wordt vergroot
+            if (confidence >= 0.8) {
+                // Plaats een MP3-bestand in hetzelfde directory als je HTML-bestand
+                const audioUrl = label.toLowerCase().replace(/\s/g, '_') + '.mp3';
+                playAudio(audioUrl);
+            }
+        }
+
+        function moveDot(dot) {
+            //// const left = Math.random() * window.innerWidth;
+            //// const top = Math.random() * window.innerHeight;
+            //// Random dot position inside certain space 
+            const left = (Math.random() * (window.innerWidth - 300) + 150);
+            const top = (Math.random() * (window.innerHeight - 300) + 100);
+            dot.style.left = `${left}px`;
+            dot.style.top = `${top}px`;
+        }
+
+        // Animation loop to continuously move dots with a delay of 50 milliseconds
+        function animateDots() {
+            const dots = document.querySelectorAll(".blue-dot");
+            dots.forEach((dot) => {
+                moveDot(dot); // Move the dot to a new random position
+            });
+
+    //        setTimeout(() => {
+   //            requestAnimationFrame(animateDots); // Request the next animation frame after a delay
+   //         }, 1500); // Adjust the delay as needed
+        }
+
+        
+                
+
+        function areDotsEnlarged(dot1, dot2) {
+            const dot1Rect = dot1.getBoundingClientRect();
+            const dot2Rect = dot2.getBoundingClientRect();
+            const dot1Size = Math.max(dot1Rect.width, dot1Rect.height);
+            const dot2Size = Math.max(dot2Rect.width, dot2Rect.height);
+
+            return dot1Size > 50 && dot2Size > 50; // Assuming 50 is the initial dot size
+        }
+
+        function setLineCoordinates(line, dot1, dot2) {
+            const dot1Rect = dot1.getBoundingClientRect();
+            const dot2Rect = dot2.getBoundingClientRect();
+
+            const x1 = dot1Rect.left + dot1Rect.width / 2;
+            const y1 = dot1Rect.top + dot1Rect.height / 2;
+
+            const x2 = dot2Rect.left + dot2Rect.width / 2;
+            const y2 = dot2Rect.top + dot2Rect.height / 2;
+
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+
+            line.style.left = `${x1}px`;
+            line.style.top = `${y1}px`;
+            line.style.width = `${distance}px`;
+            line.style.transform = `rotate(${angle}rad)`;
+        }
+
+        // Function to minimize the dots and connecting lines
+        function minimize() {
+            const dots = document.querySelectorAll(".blue-dot");
+            dots.forEach((dot) => {
+                dot.style.transform = `scale(1)`; // Reset the dot size
+            });
+
+            const connectingLinesContainer = document.getElementById("connecting-lines-container");
+            connectingLinesContainer.innerHTML = ""; // Clear connecting lines
+        }
+    </script>
+</body>
+</html>
